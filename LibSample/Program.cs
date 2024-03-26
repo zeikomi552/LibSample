@@ -2,6 +2,7 @@
 using ArgsManagerLib;
 using DocumentFormat.OpenXml;
 using System.Runtime.CompilerServices;
+using System.Text;
 using TableToJsonlConverter.Conveters;
 
 Console.WriteLine("Hello, World!");
@@ -94,7 +95,10 @@ void Init()
                 key = "-enc";
                 var enc = CheckInput(key, GetValue(key));
 
-                ZkCsvToJsonl zkCsvToJsonl = new ZkCsvToJsonl(ifile, System.Text.Encoding.GetEncoding(enc), true);
+                EncodingProvider provider = System.Text.CodePagesEncodingProvider.Instance;
+                var encoding = provider.GetEncoding(enc);
+
+                ZkCsvToJsonl zkCsvToJsonl = new ZkCsvToJsonl(ifile, encoding == null ? Encoding.UTF8 : encoding, true);
                 zkCsvToJsonl.Read();
                 var header = zkCsvToJsonl.GetHeader();
                 zkCsvToJsonl.Write(ofile);
