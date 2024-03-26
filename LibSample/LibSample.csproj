@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="ArgsManagerLib" Version="1.0.3" />
-    <PackageReference Include="TableToJsonlConverter" Version="0.0.4" />
+    <PackageReference Include="TableToJsonlConverter" Version="0.0.6" />
   </ItemGroup>
 
 </Project>

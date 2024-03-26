@@ -7,17 +7,25 @@ using TableToJsonlConverter.Conveters;
 Console.WriteLine("Hello, World!");
 
 
-string[] keys = new string[]
-    {
-        "-type",
-        "-file",
-        "-scol",
-        "-srow",
-        "-chcol",
-    };
+List<KeyValuePair<string, string>> keys = new List<KeyValuePair<string, string>>()
+{
+    new KeyValuePair<string, string>("-type", "File type -> csv or xlsx or sqlserver"),
+    new KeyValuePair<string, string>("-ifile", "input file path"),
+    new KeyValuePair<string, string>("-ofile", "output faile path"),
+    new KeyValuePair<string, string>("-scol", "start column number(Numbers starting with 1). xlsx type only"),
+    new KeyValuePair<string, string>("-srow", "start row number(Numbers starting with 1). xlsx type only"),
+    new KeyValuePair<string, string>("-chcol", "check column number(Numbers starting with 1). When it finds an empty cell, it finishes the process"),
+    new KeyValuePair<string, string>("-sheet", "sheet no. xlsx type onl"),
+    new KeyValuePair<string, string>("-cs", "Connection string. sqlserver type only."),
+    new KeyValuePair<string, string>("-sql", "Sql Command. sqlserver type only."),
+    new KeyValuePair<string, string>("-enc", "Charactor Encoding. csv type only.(ex.utf-8, Shift_JIS, EUC-JP, iso-2022-jp)"),
+};
 
 
-ArgsManager _argsManager = new ArgsManager(keys, args);
+var keylist = (from x in keys
+               select x.Key).ToArray();
+
+ArgsManager _argsManager = new ArgsManager(keylist, args);
 
 string CheckInput(string key, string message)
 {
@@ -26,7 +34,7 @@ string CheckInput(string key, string message)
     if (string.IsNullOrEmpty(val))
     {
         Console.WriteLine(message);
-        return Console.ReadLine()!;
+        return Console.ReadLine()!.Replace("\"", "");
     }
     else
     {
@@ -34,35 +42,77 @@ string CheckInput(string key, string message)
     }
 }
 
+string GetValue(string key)
+{
+    var tmp = (from x in keys where x.Key.Equals(key) select x).FirstOrDefault().Value;
+
+    if (tmp != null)
+    {
+        return tmp;
+    }
+    else
+    {
+        return string.Empty;
+    }
+}
+
 void Init()
 {
-
-
-
-    var type = CheckInput("-type", "タイプを入力してください。 -> xlsx または csv");
-    var file = CheckInput("-file", "読み込むファイルのパスを入力してください。").Replace("\"","");
+    string key = "-type";
+    var type = CheckInput(key, GetValue(key));
 
     switch (type)
     {
         case "xlsx":
             {
-                var scol = int.Parse(CheckInput("-scol", "開始列を指定してください(1からはじまる)"));
-                var srow = int.Parse(CheckInput("-srow", "開始行を指定してください(1から始まる)"));
-                var chcol = int.Parse(CheckInput("-chcol", "チェックする列を指定してください(この列が空を見つけ次第データ取得を終了します)"));
-                var sheetno = int.Parse(CheckInput("-sheetno", "取り込むExcelのシート番号を指定してください(0から始まる)"));
+                key = "-scol";
+                var scol = int.Parse(CheckInput(key, GetValue(key)));
+                key = "-srow";
+                var srow = int.Parse(CheckInput(key, GetValue(key)));
+                key = "-chcol";
+                var chcol = int.Parse(CheckInput(key, GetValue(key)));
+                key = "-sheet";
+                var sheetno = int.Parse(CheckInput(key, GetValue(key)));
+                key = "-ifile";
+                var ifile = CheckInput(key, GetValue(key));
+                key = "-ofile";
+                var ofile = CheckInput(key, GetValue(key));
 
-                ZkExcelToJsonl zkExcelToJsonl = new ZkExcelToJsonl(file, true, scol, srow, chcol, sheetno);
+
+                ZkExcelToJsonl zkExcelToJsonl = new ZkExcelToJsonl(ifile, true, scol, srow, chcol, sheetno);
                 zkExcelToJsonl.Read();
                 var header = zkExcelToJsonl.GetHeader();
-                zkExcelToJsonl.Write("test.jsonl");
+                zkExcelToJsonl.Write(ofile);
                 break;
             }
         case "csv":
             {
-                ZkCsvToJsonl zkCsvToJsonl = new ZkCsvToJsonl(file, System.Text.Encoding.UTF8, true);
+                key = "-ifile";
+                var ifile = CheckInput(key, GetValue(key));
+                key = "-ofile";
+                var ofile = CheckInput(key, GetValue(key));
+                key = "-enc";
+                var enc = CheckInput(key, GetValue(key));
+
+                ZkCsvToJsonl zkCsvToJsonl = new ZkCsvToJsonl(ifile, System.Text.Encoding.GetEncoding(enc), true);
                 zkCsvToJsonl.Read();
                 var header = zkCsvToJsonl.GetHeader();
-                zkCsvToJsonl.Write("test2.jsonl");
+                zkCsvToJsonl.Write(ofile);
+                break;
+            }
+        case "sqlserver":
+            {
+                key = "-cs";
+                var cs = CheckInput(key, GetValue(key));
+                key = "-sql";
+                var sql = CheckInput(key, GetValue(key));
+                key = "-ofile";
+                var ofile = CheckInput(key, GetValue(key));
+
+                ZkSQLServerToJsonl zkCsvToJsonl = new ZkSQLServerToJsonl(cs, sql);
+                zkCsvToJsonl.Read();
+                var header = zkCsvToJsonl.GetHeader();
+                zkCsvToJsonl.Write(ofile);
                 break;
             }
     }
